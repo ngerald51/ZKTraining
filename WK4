@@ -1,0 +1,61 @@
+//Problem 1: Rational numbers-zero knowledge addition again.
+
+
+//Solidity/EVM has two functions you may find handy: `mulmod` (which does multiplication modulo p) and the precompile `modExp` which does modular exponentiation.
+
+//Although `modExp` does not let you raise to the power of -1, you can accomplish the same thing by raising a number to `curve_order - 2`.
+
+//The following identity will be handy:
+```python
+pow(a, -1, curve_order) == pow(a, curve_order - 2, curve_order)
+```
+//(This is Fermat’s little theorem, you can ask a chatbot AI to further explain this, but it isn’t necessary to understand this)
+
+//SPDX-License-Identifier: MIT
+pragma solidity ^0.8.16;
+// Prove you know 2 rational numbers a1/b1 and a2/b2 that adds to a3/b3
+// We will prove that a1/b1 G + a2/b2 G = a3/b3 G
+// Verifier knows a3/b3, so he can calculate a3/b3 G
+// Verifier does NOT know a1/b1 and a2/b2, we will give him the points, and by the discrete log problem he can't calculate the scalar
+// calculated value 2/3 G
+// (4044475655963335105874705693887717986734082637953872334734275921521622691675,
+//  6961300548333041600164002436990239666696562973977691579804530869930595532137)
+// calculated value 1/5 G
+// (21879381081117221938049089428537290550057199332150484641616652718860113082002,
+//  9889796057169479579280645685123908321455175044358436555030685051893591124853)
+contract HW4A {
+    uint256 public constant curveOrder = 21888242871839275222246405745257275088548364400416034343698204186575808495617;
+    // calculate the multiplicative inverse of a number
+    function inverse(uint256 number) internal view returns (uint256) {
+        bytes memory input = abi.encode(uint256(32), uint256(32),uint256(32),number,curveOrder - 2,curveOrder);
+        (bool ok, bytes memory data) = address(5).staticcall(input);
+        require(ok, "call failed");
+        return abi.decode(data, (uint256));
+    }
+    // calculate the point given the scalar
+    function calculatePoint(uint256 num, uint256 den) public view returns (uint256 x, uint256 y) {
+         uint256 invDen = inverse(den);
+         uint scalar = mulmod(num, invDen, curveOrder);
+         bytes memory input = abi.encode(1,2,scalar);
+         (bool ok, bytes memory data) = address(7).staticcall(input);
+         require(ok, "call failed");
+         return abi.decode(data, (uint256, uint256));
+    }
+    // proof we know two numbers that adds to 13/15 (ex: 2/3 + 1/5)
+    // must accept 2 points and check if is equal to 13/15 G1
+    function proof(uint256 x1, uint256 y1, uint x2, uint y2) public view returns (bool) {
+        // calculate 13/15 G1
+        (uint256 xr, uint256 yr) = calculatePoint(13, 15);
+        // add the 2 curve points
+        bytes memory input = abi.encode(x1, y1, x2, y2);
+        (bool ok, bytes memory data) = address(6).staticcall(input);
+        require(ok, "call failed");
+        (uint256 xl, uint256 yl) = abi.decode(data, (uint256, uint256));
+        // accepts if P1 + P2 (left) = P3 (right)
+        if (xl == xr && yl == yr) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+}
