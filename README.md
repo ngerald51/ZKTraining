@@ -1,3 +1,3 @@
 # ZKTraining
 
-List of ZK solutions worked on from RareSkills ZK Program
+List of ZK HW worked on from RS ZK Program
