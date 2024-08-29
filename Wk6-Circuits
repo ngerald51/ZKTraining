@@ -16,6 +16,20 @@ Z === (x1x2..xn)
 
 4) Create an arithmetic circuit that constrains k to be the maximum of x, y, or z. That is, k should be equal to x if x is the maximum value, and same for y and z.
 
+Summary of the Arithmetic Circuit
+
+Inputs: Binary variables x1,x2,…,xnx_1, x_2, \ldots, x_nx1​,x2​,…,xn​ and the target sum kkk.
+
+Output: A binary value that indicates whether a subset of SSS sums to kkk.
+
+Computation Steps:
+
+Compute the sum Sum=∑i=1nxi⋅ai\text{Sum} = \sum_{i=1}^{n} x_i \cdot a_iSum=∑i=1n​xi​⋅ai​.
+
+Subtract kkk from the sum to get t=Sum−kt = \text{Sum} - kt=Sum−k.
+
+Check if T is 0 by squaring T and verifying if the result is 0.
+
 5) Create an arithmetic circuit that takes signals x₁, x₂, ..., xₙ, constrains them to be binary, and outputs 1 if at least one of the signals is 1. Hint: this is tricker than it looks. Consider combining what you learned in the first two problems and using the NOT gate.
 
 x1(x1 - 1) === 0
