@@ -1,0 +1,56 @@
+// contract should implement matrix multiplication of an n x n matrix (**M**) of uint256 and a n x 1 vector of points (**s**). It validates the claim that matrix **Ms = o** where o is a n x 1 matrix of uint256.
+// \begin{bmatrix}1 & 2 & 3\\4 & 5 & 6\\7 & 8 & 9\end{bmatrix}\begin{bmatrix}P\\Q\\R\end{bmatrix}=\begin{bmatrix}P+2Q+3R\\4P+5Q+6R\\7P + 8Q + 9R\end{bmatrix}\stackrel{?}{=}\begin{bmatrix}o_1G\\o_2G\\o_3G\end{bmatrix}
+
+
+You will need to multiply **o** by the generator on-chain so that both sides have the same type.
+
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.4;
+contract HW4B {
+    struct ECPoint {
+        uint256 x;
+        uint256 y;
+    }
+    function ecadd(ECPoint memory A, ECPoint memory B) public view returns (ECPoint memory) {
+        address ECADD = address(0x06);
+        bytes memory data = abi.encodePacked(A.x, A.y, B.x, B.y);
+        (bool success, bytes memory returnData) = ECADD.staticcall{gas:150}(data);
+        require(success, "EC addition failed");
+        ECPoint memory C;
+        (C.x, C.y) = abi.decode(returnData, (uint256, uint256));
+        return C;
+    }
+    function ecmul(uint256 s, ECPoint memory pt) public view returns (ECPoint memory) {
+        address ECMUL = address(0x07);
+        bytes memory data = abi.encodePacked(pt.x, pt.y, s);
+        (bool success, bytes memory returnData) = ECMUL.staticcall{gas:6000}(data);
+        require(success, "EC multiplication failed");
+        ECPoint memory sG;
+        (sG.x, sG.y) = abi.decode(returnData, (uint256, uint256));
+        return sG;
+    }
+    function matmul(uint256[] calldata matrix,
+                    uint256 n, // n x n for the matrix
+                    ECPoint[] calldata s, // n elements
+                    uint256[] calldata o // n elements
+                ) public view returns (bool verified) {
+        // revert if dimensions don't make sense or the matrices are empty
+        require(matrix.length == n*n && n != 0, "wrong dimension");
+        require(s.length != 0 && o.length != 0, "empty matrix");
+        require(s.length == n && o.length == n, "conflicting dimension");
+        verified = true;
+        for (uint i = 0; i < n; i++) {
+            ECPoint memory lhs;
+            for (uint j = 1; j <= n; j++) {
+                uint256 index = i*n + j - 1; // get the correct index of the matrix
+                ECPoint memory point = ecmul(matrix[index], s[j-1]);
+                lhs = ecadd(lhs, point);
+            }
+            ECPoint memory rhs;
+            rhs = ecmul(o[i], ECPoint(1,2));
+            if (rhs.x != lhs.x || rhs.y != lhs.y) {
+                verified = false;
+            }
+        }
+    }
+}
