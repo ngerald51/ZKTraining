@@ -3,7 +3,7 @@
 x1(x1 - 1) === 0
 x2(x2 - 1) === 0
 ...xn(xn-1)=== 0
-Z === (x1 + x2...xn) - (x1*x2*...xn)
+Z === (x1 + x2...xn) - 2(x1*x2*...xn)
 
 2) Create an arithmetic circuit that takes signals x₁, x₂, ..., xₙ and is satsified if all signals are 1.
 
@@ -12,36 +12,122 @@ x2(x2 - 1) === 0
 ...xn(xn-1)=== 0
 Z === (x1x2..xn)
 
+
 3) A bipartite graph is a graph that can be colored with two colors such that no two neighboring nodes share the same color. Devise an arithmetic circuit scheme to show you have a valid witness of a 2-coloring of a graph. Hint: the scheme in this tutorial needs to be adjusted before it will work with a 2-coloring.
 
 4) Create an arithmetic circuit that constrains k to be the maximum of x, y, or z. That is, k should be equal to x if x is the maximum value, and same for y and z.
 
-Summary of the Arithmetic Circuit
-
-Inputs: Binary variables x1,x2,…,xnx_1, x_2, \ldots, x_nx1​,x2​,…,xn​ and the target sum kkk.
-
-Output: A binary value that indicates whether a subset of SSS sums to kkk.
-
-Computation Steps:
-
-Compute the sum Sum=∑i=1nxi⋅ai\text{Sum} = \sum_{i=1}^{n} x_i \cdot a_iSum=∑i=1n​xi​⋅ai​.
-
-Subtract kkk from the sum to get t=Sum−kt = \text{Sum} - kt=Sum−k.
-
-Check if T is 0 by squaring T and verifying if the result is 0.
+  # Input signals
+  x
+  y
+  z
+  
+  # Intermediate signals
+  x_gte_y = IsGreaterOrEqual(x, y)
+  x_gte_z = IsGreaterOrEqual(x, z)
+  y_gte_z = IsGreaterOrEqual(y, z)
+  
+  # Output signal
+  k
+  
+  # Constraints
+  
+  # 1. Ensure x_gte_y is 1 if x >= y, 0 otherwise
+  x_gte_y * (y - x) = 0
+  (1 - x_gte_y) * (x - y - 1) = 0
+  
+  # 2. Ensure x_gte_z is 1 if x >= z, 0 otherwise
+  x_gte_z * (z - x) = 0
+  (1 - x_gte_z) * (x - z - 1) = 0
+  
+  # 3. Ensure y_gte_z is 1 if y >= z, 0 otherwise
+  y_gte_z * (z - y) = 0
+  (1 - y_gte_z) * (y - z - 1) = 0
+  
+  # 4. Constrain k to be the maximum value
+  k - x = (1 - x_gte_y) * (y - x) + (1 - x_gte_z) * (z - x)
+  
+  # 5. Ensure k is not less than any input
+  k - x >= 0
+  k - y >= 0
+  k - z >= 0
 
 5) Create an arithmetic circuit that takes signals x₁, x₂, ..., xₙ, constrains them to be binary, and outputs 1 if at least one of the signals is 1. Hint: this is tricker than it looks. Consider combining what you learned in the first two problems and using the NOT gate.
 
 x1(x1 - 1) === 0
 x2(x2 - 1) === 0
 ...xn(xn-1)=== 0
-Z === (x1 + x2...xn) - 2(x1*x2*...xn)
+Z === (x1 + x2...xn) - (x1*x2*...xn)
+
 
 6) Create an arithmetic circuit to determine if a signal v is a power of two (1, 2, 4, 8, etc). Hint: create an arithmetic circuit that constrains another set of signals to encode the binary representation of v, then place additional restrictions on those signals.
+
+
+  # Input signal
+  v
+  
+  # Intermediate signals (binary representation of v)
+  b[0], b[1], b[2], ..., b[n-1]  # n is the number of bits, e.g., 32 for a 32-bit number
+  
+  # Output signal
+  is_power_of_two
+  
+  # Constraints
+  
+  # 1. Ensure each b[i] is binary (0 or 1)
+  for i in 0..n-1:
+      b[i] * (1 - b[i]) = 0
+  
+  # 2. Reconstruct v from its binary representation
+  v = b[0] + 2 * b[1] + 4 * b[2] + ... + 2^(n-1) * b[n-1]
+  
+  # 3. Ensure exactly one bit is set to 1
+  sum_of_bits = b[0] + b[1] + b[2] + ... + b[n-1]
+  is_power_of_two * (sum_of_bits - 1) = 0
+  (1 - is_power_of_two) * sum_of_bits = 0
+  
+  # 4. Handle the special case of v = 0
+  v * is_power_of_two = v
 
 7) Create an arithmetic circuit that models the Subset sum problem. Given a set of integers (assume they are all non-negative), determine if there is a subset that sums to a given value 
 𝑘. For example, given the set {3,5,17,21} and 𝑘=22, there is a subset {5,17} that sums to 22. Of course, a subset sum problem does not necessarily have a solution.
 
-8) The covering set problem starts with a set 𝑆={1,2,…,10} and several well-defined subsets of 𝑆, for example: {1,2,3}, {3,5,7,9}, {8,10}, {5,6,7,8}, {2,4,6,8}, and asks if we can take at most 𝑘 subsets of 𝑆 such that their union is 𝑆. In the example problem above, the answer for 𝑘=4 is true because we can use {1,2,3}, {3,5,7,9}, {8,10}, {2,4,6,8}. Note that for each problems, the subsets we can work with are determined at the beginning. We cannot construct the subsets ourselves. If we had been given the subsets {1,2,3}, {4,5} {7,8,9,10} then there would be no solution because the number 6 is not in the subsets.
-On the other hand, if we had been given 𝑆={1,2,3,4,5} and the subsets {1},{1,2},{3,4},{1,4,5} and asked can it be covered with 𝑘=2 subsets, then there would be no solution. However, if 𝑘=3 then a valid solution would be {1,2},{3,4},{1,4,5}.
-Our goal is to prove for a given set 𝑆 and a defined list of subsets of 𝑆, if we can pick a set of subsets such that their union is 𝑆. Specifically, the question is if we can do it with 𝑘 or fewer subsets. We wish to prove we know which 𝑘 (or fewer) subsets to use by encoding the problem as an arithmetic circuit.
+  # Input signals
+  n  # number of integers in the set
+  s[0], s[1], ..., s[n-1]  # the set of integers
+  k  # target sum
+  
+  # Intermediate signals
+  b[0], b[1], ..., b[n-1]  # boolean selectors for each integer
+  
+  # Output signal
+  has_solution  # 1 if a subset summing to k exists, 0 otherwise
+  
+  # Constraints
+  
+  # 1. Ensure each b[i] is binary (0 or 1)
+  for i in 0..n-1:
+      b[i] * (1 - b[i]) = 0
+  
+  # 2. Calculate the sum of the selected subset
+  subset_sum = b[0] * s[0] + b[1] * s[1] + ... + b[n-1] * s[n-1]
+  
+  # 3. Constrain the subset sum to equal k if a solution exists
+  (subset_sum - k) * has_solution = 0
+  
+  # 4. If no solution exists, ensure subset sum is not equal to k
+  (1 - has_solution) * (subset_sum - k) != 0
+  
+  # 5. Ensure has_solution is binary
+  has_solution * (1 - has_solution) = 0
+  
+  # 6. Ensure all input integers are non-negative
+  for i in 0..n-1:
+      s[i] >= 0
+  
+  # 7. Ensure k is non-negative
+  k >= 0
+
+8) The covering set problem starts with a set 𝑆={1,2,…,10} and several well-defined subsets of 𝑆, for example: {1,2,3}, {3,5,7,9}, {8,10}, {5,6,7,8}, {2,4,6,8}, and asks if we can take at most 𝑘 subsets of 𝑆 such that their union is 𝑆. In the example problem above, the answer for 𝑘=4 is true because we can use {1,2,3}, {3,5,7,9}, {8,10}, {2,4,6,8}. Note that for each problems, the subsets we can work with are determined at the beginning. We cannot construct the subsets ourselves. If we had been given the subsets {1,2,3}, {4,5} {7,8,9,10} then there would be no solution because the number 6 is not in the subsets. On the other hand, if we had been given 𝑆={1,2,3,4,5} and the subsets {1},{1,2},{3,4},{1,4,5} and asked can it be covered with 𝑘=2 subsets, then there would be no solution. However, if 𝑘=3 then a valid solution would be {1,2},{3,4},{1,4,5}. Our goal is to prove for a given set 𝑆 and a defined list of subsets of 𝑆, if we can pick a set of subsets such that their union is 𝑆. Specifically, the question is if we can do it with 𝑘 or fewer subsets. We wish to prove we know which 𝑘 (or fewer) subsets to use by encoding the problem as an arithmetic circuit.
+
+
