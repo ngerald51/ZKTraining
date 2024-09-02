@@ -15,6 +15,32 @@ Z === (x1x2..xn)
 
 3) A bipartite graph is a graph that can be colored with two colors such that no two neighboring nodes share the same color. Devise an arithmetic circuit scheme to show you have a valid witness of a 2-coloring of a graph. Hint: the scheme in this tutorial needs to be adjusted before it will work with a 2-coloring.
 
+For each node, we write the constraint as:
+x_i (x_i - 1) = 0
+This ensures that each node has either color 0 or color 1
+
+Consider a graph with nodes A, B, C, and D, where A is connected to B and C, and B is connected to C. A valid 2-coloring could be: A = 0, B = 1, C = 0, D = 1.
+
+Color Constraints 2 color (1 or 0):
+x_A * (1 - x_A) = 0
+x_B * (1 - x_B) = 0
+x_C * (1 - x_C) = 0
+x_D * (1 - x_D) = 0
+
+
+Edge Constraint: This ensures that adjacent nodes have different colors.
+(1-x_i) * (1- x_j)=0 
+x_i * x_j = 0
+
+Bondary Constraint
+x_A + x_B - 2 * x_A * x_B = 1
+x_A + x_C - 2 * x_A * x_C = 1
+x_B + x_C - 2 * x_B * x_C = 1
+Substituting the given coloring into these equations, we can verify that all constraints are satisfied, confirming that the given coloring is valid.
+
+
+
+
 4) Create an arithmetic circuit that constrains k to be the maximum of x, y, or z. That is, k should be equal to x if x is the maximum value, and same for y and z.
 
   # Input signals
