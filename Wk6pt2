@@ -100,6 +100,45 @@ eq(a, b)
 Solidity cannot multiply G2 points, do this assignment in Python.
 
 
+from py_ecc.bn128 import pairing, G1, G2, multiply
+
+
+# Check equality of G12 points
+def eq(point1, point2):
+    return point1 == point2
+
+# Define the pairing check for one row of the R1CS equation
+def check_row(L_row, R_row, O_row, s, G1, G2):
+    left_side = pairing(multiply(G2, sum(L_row[i] * s[i] for i in range(len(s)))),
+                        multiply(G1, sum(R_row[i] * s[i] for i in range(len(s)))))
+    
+    right_side = pairing(multiply(G2, 1), multiply(G1, sum(O_row[i] * s[i] for i in range(len(s)))))
+    
+    return eq(left_side, right_side)
+
+# Example data for G1 and G2 generators
+G1 = G1
+G2 = G2
+
+# Example row matrices (L, R, O) and vector s
+#L = [[1, 2], [3, 4]]  # L matrix rows
+#R = [[5, 6], [7, 8]]  # R matrix rows
+#O = [[9, 10], [11, 12]]  # O matrix rows
+
+L = [[1, 2], [3, 4], [5, 6]]
+R = [[7, 8], [9, 10], [11, 12]]
+O = [[13, 14], [15, 16], [17, 18]]
+s = [1, 2]  # Vector of scalars
+
+# Check each row of the equation
+for i in range(len(L)):
+    if check_row(L[i], R[i], O[i], s, G1, G2):
+        print(f"Row {i+1}: Verified")
+    else:
+        print(f"Row {i+1}: Not Verified")
+
+
+
 
 
 **Problem 4**
