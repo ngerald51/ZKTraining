@@ -57,6 +57,11 @@ for vec in vectors:
         result = test_scalar_property(vec, c)
         print(f"Vector: {vec}, Scalar: {c}, Property holds: {result}")
 
+#When you multiply a vector by a scalar 𝑐 c and then apply the transformation 𝜙 ϕ to it, 
+#it's the same as first applying the transformation 𝜙 ϕ to the vector and then multiplying the resulting polynomial by the scalar 𝑐 c.
+#In other words: The transformation 𝜙 ϕ respects scalar multiplication. Scaling the entire vector before transforming it into a polynomial yields the same result 
+#as scaling the polynomial obtained after the transformation.
+
 
 #### Question 2-QAP by hand
 import numpy as np
