@@ -1,0 +1,176 @@
+**Problem 1**
+
+Create a graph with 3 nodes and 3 edges and write constraints for a 3-coloring. Conver the 3-coloring to a rank 1 constraint system.
+
+
+
+**Problem 2**
+
+Write python code that takes an R1CS matrix A, B, and C and a witness vector w and
+verifies.
+
+*Aw* ⊙ *Bw* − *Cw* = 0
+
+Where ⊙ is the hadamard (element-wise) product.
+
+Use this to code to check your answer above is correct.
+
+import numpy as np
+
+def verify_r1cs(A, B, C, w):
+    """
+    Verify the R1CS constraint: (Aw ⊙ Bw) - Cw = 0
+    
+    Parameters:
+    A, B, C (np.array): R1CS constraint matrices
+    w (np.array): Witness vector
+    
+    Returns:
+    bool: True if the constraint is satisfied, False otherwise
+    """
+    Aw = np.dot(A, w)
+    Bw = np.dot(B, w)
+    Cw = np.dot(C, w)
+    
+    left_side = np.multiply(Aw, Bw)  # Hadamard product
+    right_side = Cw
+    
+    return np.allclose(left_side, right_side)
+
+# Example usage and verification
+A = np.array([
+    [0, 1, 0, 0, 0, 0],
+    [0, 0, 0, 1, 0, 0],
+    [0, 1, 0, 0, 1, 0],
+    [5, 0, 0, 0, 0, 1]
+])
+
+B = np.array([
+    [0, 1, 0, 0, 0, 0],
+    [0, 1, 0, 0, 0, 0],
+    [1, 0, 0, 0, 0, 0],
+    [1, 0, 0, 0, 0, 0]
+])
+
+C = np.array([
+    [0, 0, 0, 1, 0, 0],
+    [0, 0, 0, 0, 1, 0],
+    [0, 0, 0, 0, 0, 1],
+    [0, 0, 1, 0, 0, 0]
+])
+
+w = np.array([1, 3, 35, 9, 27, 30])
+
+result = verify_r1cs(A, B, C, w)
+print(f"R1CS constraint satisfied: {result}")
+
+# Verification of single multiplication per row
+for i in range(A.shape[0]):
+    non_zero_A = np.count_nonzero(A[i])
+    non_zero_B = np.count_nonzero(B[i])
+    print(f"Row {i + 1}: {'Single multiplication' if non_zero_A * non_zero_B == 1 else 'Multiple multiplications'}")
+
+
+
+
+**Problem 3**
+
+Given an R1CS of the form
+
+$$
+L\mathbf{\vec{[s]_1}}\odot R\mathbf{\vec{[s]_2}} = O\mathbf{\vec{[s]}_{1}}\odot\vec{[G_2]_2}
+$$
+
+Where L, R, and O are n x m matrices of field elements and **s** is a vector of G1, G2, or G1 points
+
+Write python code that verifies the formula.
+
+You can check the equality of G12 points in Python this way:
+
+```python
+a = pairing(multiply(G2, 5), multiply(G1, 8))
+b = pairing(multiply(G2, 10), multiply(G1, 4))
+eq(a, b)
+```
+
+**Hint:** Each row of the matrices is a separate pairing.
+
+**Hint:** When you get **s** encrypted with both G1 and G2 generators, you don’t know whether or not they have the same discrete logarithm. However, it is straightforward to check using another equation. Figure out how to discover if sG1 == sG2 if you are given the elliptic curve points but not s.
+
+Solidity cannot multiply G2 points, do this assignment in Python.
+
+
+from py_ecc.bn128 import pairing, G1, G2, multiply
+
+
+# Check equality of G12 points
+def eq(point1, point2):
+    return point1 == point2
+
+# Define the pairing check for one row of the R1CS equation
+def check_row(L_row, R_row, O_row, s, G1, G2):
+    left_side = pairing(multiply(G2, sum(L_row[i] * s[i] for i in range(len(s)))),
+                        multiply(G1, sum(R_row[i] * s[i] for i in range(len(s)))))
+    
+    right_side = pairing(multiply(G2, 1), multiply(G1, sum(O_row[i] * s[i] for i in range(len(s)))))
+    
+    return eq(left_side, right_side)
+
+# Example data for G1 and G2 generators
+G1 = G1
+G2 = G2
+
+# Example row matrices (L, R, O) and vector s
+#L = [[1, 2], [3, 4]]  # L matrix rows
+#R = [[5, 6], [7, 8]]  # R matrix rows
+#O = [[9, 10], [11, 12]]  # O matrix rows
+
+L = [[1, 2], [3, 4], [5, 6]]
+R = [[7, 8], [9, 10], [11, 12]]
+O = [[13, 14], [15, 16], [17, 18]]
+s = [1, 2]  # Vector of scalars
+
+# Check each row of the equation
+for i in range(len(L)):
+    if check_row(L[i], R[i], O[i], s, G1, G2):
+        print(f"Row {i+1}: Verified")
+    else:
+        print(f"Row {i+1}: Not Verified")
+
+
+
+
+
+**Problem 4**
+
+Why does an R1CS require exactly one multiplication per row?
+
+How does this relate to bilinear pairings?
+##
+R1CS (Rank-1 Constraint System) typically requires exactly one multiplication per row and how this relates to bilinear pairings, let's break this down step by step:
+
+
+An R1CS is a way of representing computations that is commonly used in zero-knowledge proof systems, particularly in zk-SNARKs (Zero-Knowledge Succinct Non-Interactive Arguments of Knowledge).
+The "rank-1" in R1CS: The term "rank-1" refers to the fact that each constraint in the system is represented by a single multiplication of two linear combinations of variables, plus a third linear combination.
+
+One multiplication per row:
+Each row in an R1CS corresponds to a single constraint. This constraint takes the form:
+(a · x) * (b · x) = (c · x)
+Where a, b, and c are vectors, x is the vector of variables and constants, and · represents the dot product.
+The key point is that there's only one multiplication operation (the * between the two dot products) in each constraint. This is why we say there's exactly one multiplication per row.
+
+
+Relation to bilinear pairings:
+Bilinear pairings are mathematical constructs used in cryptography, particularly in the implementation of zk-SNARKs. The connection between R1CS and bilinear pairings comes from how zk-SNARKs are constructed and proven:
+a) Bilinear pairings allow for the efficient verification of products in encrypted form. This is crucial because it allows the verifier to check the satisfaction of R1CS constraints without knowing the actual values.
+b) The single multiplication in each R1CS constraint maps well to the properties of bilinear pairings. A bilinear pairing e(g,h) has the property that e(g^a, h^b) = e(g,h)^(ab) for any a and b. This property allows the verifier to check the product of two encrypted values without knowing the values themselves.
+c) By limiting each constraint to a single multiplication, the R1CS structure allows for efficient proof generation and verification using bilinear pairings. Each constraint can be checked using a single pairing operation.
+Efficiency considerations:
+Having only one multiplication per constraint is beneficial for both the prover and verifier in a zk-SNARK system:
+
+For the prover, it simplifies the process of generating the proof.
+For the verifier, it reduces the number of pairing operations needed to verify the proof, which is important because pairing operations are computationally expensive.
+
+
+
+In summary, the restriction to one multiplication per row in an R1CS is designed to align with the properties of bilinear pairings, allowing for efficient zero-knowledge proof systems. This structure enables the creation of succinct proofs that can be quickly verified, which is a key feature of zk-SNARKs.
